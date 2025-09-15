@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Health Awareness Chatbot</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f4f4f4; margin:0; padding:0; }
+header { background: #007bff; color: white; padding: 15px; text-align: center; }
+#chat-container { width: 90%; max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; padding: 15px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+#messages { height: 300px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+.user-msg { background: #007bff; color: white; padding: 8px; border-radius: 5px; margin-bottom: 5px; }
+.bot-msg { background: #e9ecef; padding: 8px; border-radius: 5px; margin-bottom: 5px; }
+#input-area { display: flex; margin-top: 10px; }
+#user-input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+#send-btn, #voice-btn { background: #007bff; color: white; border: none; padding: 8px 12px; margin-left: 5px; border-radius: 5px; cursor: pointer; }
+select { margin-top: 10px; padding: 6px; }
+.alert { background: #ffcc00; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; color: #333; }
+.emergency-buttons { margin-top: 10px; text-align: center; }
+.emergency-buttons button { border: none; padding: 10px 15px; margin: 5px; border-radius: 5px; cursor: pointer; color: white; }
+.emergency-buttons button.cpr { background: #28a745; }
+.emergency-buttons button.preg { background: #17a2b8; }
+.emergency-buttons button.emerg { background: #dc3545; }
+iframe { margin-top: 5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AI Health Awareness Chatbot</h1>
+</header>
+
+<div id="chat-container">
+  <div class="alert" id="weather-alert">Checking weather and air quality...</div>
+
+  <label for="lang">Select Language:</label>
+  <select id="lang">
+    <option value="en">English</option>
+    <option value="hi">Hindi</option>
+    <option value="te">Telugu</option>
+  </select>
+
+  <div class="emergency-buttons">
+    <button class="cpr" onclick="window.open('https://www.youtube.com/watch?v=3zK2b4T3pms','_blank')">🚑 CPR Immediate Guide</button>
+    <button class="preg" onclick="window.location.href='tel:108'">👩‍🍼 Call Ambulance (Pregnancy)</button>
+    <button class="emerg" onclick="window.location.href='tel:108'">🚨 Call Emergency (108)</button>
+  </div>
+
+  <div id="messages"></div>
+
+  <div id="input-area">
+    <input type="text" id="user-input" placeholder="Type your question...">
+    <button id="send-btn">Send</button>
+    <button id="voice-btn">🎤</button>
+  </div>
+</div>
+
+<script>
+// ---------------- Weather + Air Quality ----------------
+const alertBox = document.getElementById('weather-alert');
+const weatherApiKey = 'YOUR_OPENWEATHERMAP_API_KEY';
+navigator.geolocation.getCurrentPosition(pos => {
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+  fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${weatherApiKey}&units=metric`)
+    .then(res => res.json())
+    .then(data => {
+      let temp = data.main.temp;
+      let condition = data.weather[0].main;
+      let alertMsg = `Weather: ${condition}, Temp: ${temp}°C. `;
+      if (temp > 35) alertMsg += "Heat alert! Stay hydrated.";
+      if (condition.toLowerCase().includes("dust") || condition.toLowerCase().includes("smoke")) {
+        alertMsg += " Air quality poor! Asthma/BP patients take care.";
+      }
+      alertBox.textContent = alertMsg;
+    });
+});
+
+// ---------------- Diseases Data ----------------
+const diseases = {
+  "asthma": { symptoms:{en:"Wheezing, breathlessness.",hi:"सीटी, सांस की कमी।",te:"వీసింగ్, శ్వాసకోస సమస్యలు."}, prevention:{en:"Avoid dust, pollution.",hi:"धूल, प्रदूषण से बचें।",te:"ధూళి, కాలుష్యాన్ని నివారించండి."}, medication:{en:"Use prescribed inhalers.",hi:"निर्धारित इनहेलर का उपयोग करें।",te:"డాక్టర్ చెప్పిన ఇన్హేలర్ వాడండి."}, image:"https://upload.wikimedia.org/wikipedia/commons/5/50/Asthma_inhaler.png", video:{en:"https://www.youtube.com/embed/IwGkbb7sxJ8",hi:"https://www.youtube.com/embed/7FXeSbfRnm0",te:"https://www.youtube.com/embed/OBp2Tb03yzU"}},
+  "fever": { symptoms:{en:"High temperature, chills.",hi:"उच्च तापमान, ठंड लगना।",te:"ఎత్తైన జ్వరం, శీతలంపు."}, prevention:{en:"Stay hydrated.",hi:"पानी पीएं।",te:"నీరు తాగండి."}, medication:{en:"Paracetamol after doctor consult.",hi:"डॉक्टर से परामर्श के बाद पैरासिटामोल लें।",te:"డాక్టర్ సలహా తరువాత పారాసిటమాల్ వాడండి."}, image:"https://upload.wikimedia.org/wikipedia/commons/4/48/Fever.png", video:{en:"https://www.youtube.com/embed/1T9N_3w5rU0",hi:"https://www.youtube.com/embed/1T9N_3w5rU0",te:"https://www.youtube.com/embed/1T9N_3w5rU0"}},
+  "breast cancer": { symptoms:{en:"Lump in breast.",hi:"स्तन में गांठ।",te:"స్తనంలో గుండ్రటి."}, prevention:{en:"Regular screening.",hi:"नियमित जांच।",te:"నియమిత స్క్రీనింగ్."}, medication:{en:"Consult oncologist.",hi:"ऑन्कोलॉजिस्ट से मिलें।",te:"ఆంకాలజిస్ట్ ను సంప్రదించండి."}, image:"https://upload.wikimedia.org/wikipedia/commons/7/7b/Breast_cancer_pink_ribbon.svg", video:{en:"https://www.youtube.com/embed/atqywLmD75g",hi:"https://www.youtube.com/embed/3FL2MY7cM4k",te:"https://www.youtube.com/embed/OBp2Tb03yzU"}},
+  "jaundice": { symptoms:{en:"Yellow skin and eyes.",hi:"पीली त्वचा और आंखें।",te:"పసుపు చర్మం మరియు కన్నులు."}, prevention:{en:"Maintain hygiene.",hi:"साफ-सफाई रखें।",te:"శుభ్రత కాపాడండి."}, medication:{en:"Liver care, doctor advice.",hi:"लीवर की देखभाल, डॉक्टर सलाह।",te:"కాలేయ శ్రద్ధ, డాక్టర్ సలహా."}, image:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Jaundice_icon.png", video:{en:"https://www.youtube.com/embed/DzqMazWBIhA",hi:"https://www.youtube.com/embed/3FL2MY7cM4k",te:"https://www.youtube.com/embed/OBp2Tb03yzU"}},
+  "obesity": { symptoms:{en:"Excess body fat.",hi:"अधिक शरीर वसा।",te:"అధిక శరీర కొవ్వు."}, prevention:{en:"Exercise, healthy diet.",hi:"व्यायाम और स्वस्थ आहार।",te:"వ్యాయామం, ఆరోగ్యకరమైన ఆహారం."}, medication:{en:"Dietician guidance.",hi:"डायटीशियन से सलाह लें।",te:"డైటిషియన్ సలహా."}, image:"https://upload.wikimedia.org/wikipedia/commons/2/20/Obesity_icon.png", video:{en:"https://www.youtube.com/embed/7m0W_c3erfI",hi:"https://www.youtube.com/embed/5b1nWJZy2oE",te:"https://www.youtube.com/embed/ZtHuJhxjP5c"}},
+  "bp": { symptoms:{en:"Headache, dizziness.",hi:"सिरदर्द, चक्कर।",te:"తలనొప్పి, తల తిరగడం."}, prevention:{en:"Reduce salt, stress.",hi:"नमक और तनाव कम करें।",te:"ఉప్పు తగ్గించండి, ఒత్తిడి తగ్గించండి."}, medication:{en:"BP medication prescribed.",hi:"बीपी दवा लें।",te:"BP మందులు వాడండి."}, image:"https://upload.wikimedia.org/wikipedia/commons/3/3e/Blood_pressure_icon.png", video:{en:"https://www.youtube.com/embed/mjTMZ_sm0LQ",hi:"https://www.youtube.com/embed/3FL2MY7cM4k",te:"https://www.youtube.com/embed/OBp2Tb03yzU"}},
+  "diabetes": { symptoms:{en:"Frequent urination, thirst.",hi:"बार-बार पेशाब, प्यास।",te:"తరచుగా మూత్ర విసర్జన, దాహం."}, prevention:{en:"Diet control, exercise.",hi:"आहार नियंत्रण, व्यायाम।",te:"ఆహారం నియంత్రణ, వ్యాయామం."}, medication:{en:"Insulin/oral drugs.",hi:"इंसुलिन/दवा लें।",te:"ఇన్సులిన్/మందులు వాడండి."}, image:"https://upload.wikimedia.org/wikipedia/commons/8/8a/Diabetes_icon.png", video:{en:"https://www.youtube.com/embed/7HgEh5cWfJc",hi:"https://www.youtube.com/embed/5b1nWJZy2oE",te:"https://www.youtube.com/embed/ZtHuJhxjP5c"}},
+  "heart attack": { symptoms:{en:"Chest pain, sweating.",hi:"सीना दर्द, पसीना।",te:"మోచేతి నొప్పి, ఈతల వేళ."}, prevention:{en:"Healthy lifestyle.",hi:"स्वस्थ जीवनशैली।",te:"ఆరోగ్యకరమైన జీవనశైలి."}, medication:{en:"Emergency hospital visit.",hi:"आपातकालीन अस्पताल जाएं।",te:"తక్షణం హాస్పిటల్ వెళ్ళండి."}, image:"https://upload.wikimedia.org/wikipedia/commons/3/3d/Heart_attack_icon.png", video:{en:"https://www.youtube.com/embed/Fu1u11iRKAE",hi:"https://www.youtube.com/embed/3FL2MY7cM4k",te:"https://www.youtube.com/embed/OBp2Tb03yzU"}},
+  "pcod": { symptoms:{en:"Irregular periods.",hi:"अनियमित मासिक धर्म।",te:"అనియమిత పీరియడ్స్."}, prevention:{en:"Healthy weight.",hi:"स्वस्थ वजन।",te:"ఆరోగ్యకరమైన బరువు."}, medication:{en:"Doctor-prescribed medication.",hi:"डॉक्टर द्वारा दवा।",te:"డాక్టర్ ఇచ్చిన మందులు."}, image:"https://upload.wikimedia.org/wikipedia/commons/e/e3/PCOS_icon.png", video:{en:"https://www.youtube.com/embed/ZNMRtG3w7QY",hi:"https://www.youtube.com/embed/ZNMRtG3w7QY",te:"https://www.youtube.com/embed/ZNMRtG3w7QY"}},
+  "blood cancer": { symptoms:{en:"Fatigue, fever.",hi:"थकान, बुखार।",te:"అలసట, జ్వరం."}, prevention:{en:"Regular checkups.",hi:"नियमित जांच।",te:"నియమిత తనిఖీలు."}, medication:{en:"Chemotherapy (doctor).",hi:"कीमोथेरेपी (डॉक्टर)।",te:"కీమోథెరపీ (డాక్టర్)."}, image:"https://upload.wikimedia.org/wikipedia/commons/4/4f/Blood_drop_icon.png", video:{en:"https://www.youtube.com/embed/aqz-KE-bpKQ",hi:"https://www.youtube.com/embed/aqz-KE-bpKQ",te:"https://www.youtube.com/embed/aqz-KE-bpKQ"}},
+  "rabies": { symptoms:{en:"Fever, hydrophobia.",hi:"बुखार, जल से डर।",te:"జ్వరం, నీరు పట్ల భయం."}, prevention:{en:"Vaccinate pets.",hi:"पालतू जानवरों का टीकाकरण।",te:"పెంపుడు జంతువులకు టీకా వేయండి."}, medication:{en:"Rabies vaccine after bite.",hi:"काटने के बाद रेबीज का टीका।",te:"తొక్కిన తర్వాత రేబీస్ టీకా."}, image:"https://upload.wikimedia.org/wikipedia/commons/3/3d/Rabies_icon.png", video:{en:"https://www.youtube.com/embed/0y8pClSxH2I",hi:"https://www.youtube.com/embed/0y8pClSxH2I",te:"https://www.youtube.com/embed/0y8pClSxH2I"}},
+  "mumps": { symptoms:{en:"Swollen jaw, fever.",hi:"सूजी हुई जबड़ा, बुखार।",te:"పొడుగుగా చీలిన చెమట, జ్వరం."}, prevention:{en:"Vaccination.",hi:"टीकाकरण।",te:"టీకా వేయడం."}, medication:{en:"Rest & fluids.",hi:"आराम और पानी।",te:"విశ్రాంతి మరియు నీరు."}, image:"https://upload.wikimedia.org/wikipedia/commons/1/1d/Mumps_icon.png", video:{en:"https://www.youtube.com/embed/XdPbHF5vXzA",hi:"https://www.youtube.com/embed/XdPbHF5vXzA",te:"https://www.youtube.com/embed/XdPbHF5vXzA"}},
+  "appendix": { symptoms:{en:"Lower abdominal pain.",hi:"नीचे पेट में दर्द।",te:"కిందవంటి పొట్ట నొప్పి."}, prevention:{en:"Seek medical help.",hi:"चिकित्सा सहायता लें।",te:"వైద్య సహాయం తీసుకోండి."}, medication:{en:"Surgery often needed.",hi:"अक्सर सर्जरी की आवश्यकता।",te:"సర్జరీ అవసరం."}, image:"https://upload.wikimedia.org/wikipedia/commons/5/5f/Appendix_icon.png", video:{en:"https://www.youtube.com/embed/6Rkt0nztYoM",hi:"https://www.youtube.com/embed/6Rkt0nztYoM",te:"https://www.youtube.com/embed/6Rkt0nztYoM"}}
+};
+
+// ---------------- Chatbot ----------------
+const messages = document.getElementById('messages');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const langSelect = document.getElementById('lang');
+
+const translations = { en: { symptoms: "Symptoms", prevention: "Prevention", medication: "Medication" },
+                       hi: { symptoms: "लक्षण", prevention: "रोकथाम", medication: "दवा" },
+                       te: { symptoms: "లక్షణాలు", prevention: "నివారణ", medication: "ఔషధం" } };
+
+function addMessage(text, isUser=false) {
+  const div = document.createElement('div');
+  div.className = isUser ? 'user-msg' : 'bot-msg';
+  div.innerHTML = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function handleUserInput(input) {
+  let lang = langSelect.value;
+  input = input.toLowerCase();
+  addMessage(input,true);
+  if(diseases[input]){
+    let d = diseases[input];
+    let t = translations[lang];
+    let reply = `<strong>${input.toUpperCase()}</strong><br>
+    ${t.symptoms}: ${d.symptoms[lang]}<br>
+    ${t.prevention}: ${d.prevention[lang]}<br>
+    ${t.medication}: ${d.medication[lang]}<br>
+    <img src="${d.image}" width="100">`;
+    if(d.video[lang]) reply += `<br><iframe width="300" height="170" src="${d.video[lang]}" frameborder="0" allowfullscreen></iframe>`;
+    addMessage(reply);
+  } else {
+    const notFound = lang==='hi' ? "कृपया अधिक जानकारी दें।" : lang==='te' ? "దయచేసి మరింత సమాచారం ఇవ్వండి." : "Please provide more details.";
+    addMessage(notFound);
+  }
+}
+
+sendBtn.addEventListener('click', ()=>{ if(userInput.value.trim()!==''){ handleUserInput(userInput.value.trim()); userInput.value=''; }});
+
+// ---------------- Voice Recognition ----------------
+const voiceBtn = document.getElementById('voice-btn');
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SpeechRecognition){
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-IN';
+  recognition.onresult = event => {
+    let transcript = event.results[0][0].transcript;
+    userInput.value = transcript;
+    handleUserInput(transcript);
+  };
+  voiceBtn.addEventListener('click', ()=>{
+    recognition.lang = langSelect.value==='hi'?'hi-IN':langSelect.value==='te'?'te-IN':'en-IN';
+    recognition.start();
+  });
+} else { voiceBtn.disabled=true; voiceBtn.textContent='No 🎤'; }
+
+</script>
+</body>
+</html>
